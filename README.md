@@ -20,4 +20,5 @@ Set following environment variables
 | DATA_FOLDER | Location where to store the data. Bind a folder with your host |
 
 ## TODO
-- [ ] Convert JSON from API to CSV for HASS service import integrations
+- [x] Convert JSON from API to CSV for HASS service import integrations
+- [ ] Use electrical data with 15 min period instead of 1 hour
