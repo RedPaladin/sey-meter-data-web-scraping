@@ -151,7 +151,7 @@ class SeyDataSaver:
         self._load_sums()
 
     def _is_high_tariff_datetime(self, dt : datetime) -> bool:
-        if dt.weekday() in range(0, 5):
+        if dt.weekday() in range(0, 4):
             return dt.hour >= 6 and dt.hour < 22
         else: # weekend
             return (dt.hour >= 10 and dt.hour < 13) or (dt.hour >= 17 and dt.hour < 22)
