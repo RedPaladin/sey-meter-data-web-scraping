@@ -25,9 +25,9 @@ Set following environment variables
 ## TODO
 - [x] Convert JSON from API to CSV for HASS service import integrations
 - [x] Save the sums in a smarter way (if you execute the script twice)
-- [ ] Rename output files with energy
+- [x] Rename output files with energy
 - [ ] Use Name field in hass db to set a friendly name to the sensors
-- [ ] Generate cost report based on PDF's [electricity](EL-Tarifs-simplifie-2024.pdf) and [water](D-SERV-02-07-Tarif-eau.pdf)
+- [x] Generate cost report based on PDF's [electricity](EL-Tarifs-simplifie-2024.pdf) and [water](D-SERV-02-07-Tarif-eau.pdf)
 - [ ] Automate building of Docker image with GitHub Actions
 - [ ] Improve logout of the client portal
 - [ ] Improve logging
