@@ -14,7 +14,8 @@ ENV TZ=Europe/Zurich
 RUN pip install --upgrade pip
 
 # install selenium and requests
-RUN pip install selenium requests
+ADD requirements.txt /
+RUN pip install -r /requirements.txt
 
 RUN pip cache purge
 
