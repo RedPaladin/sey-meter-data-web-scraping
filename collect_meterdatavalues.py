@@ -60,7 +60,7 @@ class SeyWebScraper:
 
         ActionChains(self._driver).move_to_element(login).click().perform()
 
-        print(self._driver.get_cookies())
+        #print(self._driver.get_cookies())
 
         username_element = self._driver.find_element(By.ID, "username")
 
@@ -80,7 +80,7 @@ class SeyWebScraper:
         
         ActionChains(self._driver).move_to_element(sign_in).click().perform()
 
-        print(self._driver.get_cookies())
+        #print(self._driver.get_cookies())
 
         self._driver.save_screenshot("screenshot1.png")
 
@@ -100,20 +100,16 @@ class SeyWebScraper:
 
         meterdatavalues = requests.get(f"https://backend.yverdon-energies.ch/ebp/meterdatavalues?meteringpoint={electrical_contract_id}&dateFrom={start_dt.isoformat()}&dateTo={end_dt.isoformat()}&intervall=1", headers=header, timeout=10)
 
-        filename = os.path.join(folder, date.strftime("%Y%m%d") + "-electricity-data.json")
-
         # data in kWh, 1 sample / 1 hour
-        with open(filename, 'w', encoding="utf-8") as f:
-            json.dump(json.loads(meterdatavalues.content.decode("utf-8")), f, indent=3)
+        electrical_json_data = json.loads(meterdatavalues.content.decode("utf-8"))
 
         # seems to work only with data from yesterday, not older. Why ?
         meterdatavalues = requests.get(f"https://backend.yverdon-energies.ch/ebp/meterdatavalues?meteringpoint={water_contract_id}&dateFrom={start_dt.isoformat()}&dateTo={end_dt.isoformat()}&intervall=6", headers=header, timeout=10)
 
-        filename = os.path.join(folder, date.strftime("%Y%m%d") + "-water-data.json")
-
         # data in m3, 1 sample / 1 hour
-        with open(filename, 'w', encoding="utf-8") as f:
-            json.dump(json.loads(meterdatavalues.content.decode("utf-8")), f, indent=3)
+        water_json_data = json.loads(meterdatavalues.content.decode("utf-8"))
+
+        return electrical_json_data, water_json_data
 
     def logout(self):
         ''' Logout from the SEY '''
@@ -136,6 +132,32 @@ class SeyWebScraper:
         ''' Close the driver '''
         self._driver.quit()
 
+class SeyDataSaver:
+    def __init__(self) -> None:
+        pass
+
+    def _extract_data(self, data, entity_id, unit):
+        # print the headers
+        yield "statistic_id\tunit\tstart\tmin\tmax\tmean"
+        for d in data:
+            dt = d['x']
+            cons = d['y']
+
+            dt = datetime.fromisoformat(dt) - timedelta(hours=1)
+            dt = dt.strftime("%d.%m.%Y %H:%M")
+
+            yield f"{entity_id}\t{unit}\t{dt}\t{cons:.3f}\t{cons:.3f}\t{cons:.3f}"
+
+    def _save_data(self, filename, generator):
+        with open(filename, "w", encoding="utf-8") as f:
+            print(f"Saving file: {filename}")
+            for line in generator:
+                #print(line)
+                f.write(line + "\n")
+
+    def save(self, filename, data, entity_id, unit):
+        self._save_data(filename, self._extract_data(data, entity_id, unit))
+
 
 USERNAME = os.getenv("SEY_USERNAME")
 PASSWORD = os.getenv("SEY_PASSWORD")
@@ -149,8 +171,14 @@ scrapper = SeyWebScraper()
 
 try:
     scrapper.login(USERNAME, PASSWORD)
-    yesterday_dt = datetime.now() - timedelta(days = 1)
-    scrapper.collect(ELECTRICAL_CONTRACT_ID, WATER_CONTRACT_ID, yesterday_dt, DATA_FOLDER)
+    dt = datetime.now() - timedelta(days = 1)
+    electrical_json_data, water_json_data = scrapper.collect(ELECTRICAL_CONTRACT_ID, WATER_CONTRACT_ID, dt, DATA_FOLDER)
     scrapper.logout()
+
+    saver = SeyDataSaver()
+
+    saver.save(os.path.join(DATA_FOLDER, dt.strftime("%Y%m%d") + "-power-production-data.tsv"), electrical_json_data[0]['data'], "sensor:sey_power_production", "kWh")
+    saver.save(os.path.join(DATA_FOLDER, dt.strftime("%Y%m%d") + "-power-consumption-data.tsv"), electrical_json_data[1]['data'], "sensor:sey_power_consumption", "kWh")
+    saver.save(os.path.join(DATA_FOLDER, dt.strftime("%Y%m%d") + "-water-consumption-data.tsv"), water_json_data[0]['data'], "sensor:sey_water_consumption", "m³")
 finally:
     scrapper.close()
