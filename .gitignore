@@ -163,4 +163,4 @@ cython_debug/
 
 env.txt
 data_test/
-data/
+/data/

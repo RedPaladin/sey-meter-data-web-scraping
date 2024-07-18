@@ -1,12 +1,10 @@
-#!/usr/bin/env python3
-
 import json
 import os
-import sys
 from datetime import datetime, timedelta
 from enum import Enum
 
 import requests
+
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
@@ -14,7 +12,8 @@ from selenium.webdriver.common.by import By
 class SeyWebScraper:
     ''' Class to Web Scrap from SEY '''
 
-    def __init__(self):
+    def __init__(self, output_folder):
+
         chrome_options = webdriver.ChromeOptions()
 
         chrome_options.add_argument('--no-sandbox')
@@ -24,12 +23,15 @@ class SeyWebScraper:
         chrome_options.add_argument("--window-size=1920,1080")
 
         chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
-        
+
         self._driver = webdriver.Chrome(options=chrome_options)
         self._driver.implicitly_wait(20)
+        self._output_folder = output_folder
+
+        assert os.path.exists(self._output_folder)
 
     def _screenshot_element(self, elem, filename):
-        with open(filename, "wb") as f:
+        with open(os.path.join(self._output_folder, filename), "wb") as f:
             f.write(elem.screenshot_as_png)
 
     def _findkeys(self, node, kv):
@@ -51,7 +53,7 @@ class SeyWebScraper:
             l = list(self._findkeys(log, "Authorization"))
             if len(l) > 0:
                 return { "Authorization" : str(l[0]) }
-        
+
     def login(self, username, password):
         ''' Login into SEY '''
 
@@ -61,8 +63,6 @@ class SeyWebScraper:
         self._screenshot_element(login, "login.png")
 
         ActionChains(self._driver).move_to_element(login).click().perform()
-
-        #print(self._driver.get_cookies())
 
         username_element = self._driver.find_element(By.ID, "username")
 
@@ -76,17 +76,17 @@ class SeyWebScraper:
 
         self._screenshot_element(password_element, "password.png")
 
-        self._driver.save_screenshot("screenshot0.png")
+        self._driver.save_screenshot(os.path.join(self._output_folder, "screenshot0.png"))
 
         sign_in = self._driver.find_element(By.ID, "kc-login")
-        
+
         ActionChains(self._driver).move_to_element(sign_in).click().perform()
 
         #print(self._driver.get_cookies())
 
-        self._driver.save_screenshot("screenshot1.png")
+        self._driver.save_screenshot(os.path.join(self._output_folder, "screenshot1.png"))
 
-    def collect(self, electrical_contract_id, water_contract_id, date, folder):
+    def collect(self, electrical_contract_id, water_contract_id, date):
         ''' Collect the data from the SEY '''
 
         # Wait until this element is visible so we are sure that data are available
@@ -128,7 +128,7 @@ class SeyWebScraper:
 
         ActionChains(self._driver).move_to_element(logout).click().perform()
 
-        self._driver.save_screenshot("screenshot2.png")
+        self._driver.save_screenshot(os.path.join(self._output_folder, "screenshot2.png"))
 
     def close(self):
         ''' Close the driver '''
@@ -210,7 +210,30 @@ class SeyDataSaver:
                 #print(line)
                 f.write(line + "\n")
 
-    def save(self, filename, data, entity_id, unit, mode : Mode, tariff: float = None):
+    def save(self, data_electricity, data_water):
+        assert len(data_electricity) == 2
+
+        self._save("energy-production-data-high-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_high_tariff", "kWh", Mode.DATA_BI_TARIFICATION_HIGH_TARIFF_MODE)
+        self._save("energy-production-data-low-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_low_tariff", "kWh", Mode.DATA_BI_TARIFICATION_LOW_TARIFF_MODE)
+        tariff = (18.10) * 1.081
+        self._save("energy-production-cost-high-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_cost_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
+        tariff = (18.10) * 1.081
+        self._save("energy-production-cost-low-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_cost_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
+
+        self._save("energy-consumption-data-high-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_high_tariff", "kWh", Mode.DATA_BI_TARIFICATION_HIGH_TARIFF_MODE)
+        self._save("energy-consumption-data-low-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_low_tariff", "kWh", Mode.DATA_BI_TARIFICATION_LOW_TARIFF_MODE)
+        tariff = (21.0 + 13.11 + 0.75 + 2.3 + 0.6 + 0.02 + 0.7 + 0.7 + 0.6 + 1.2) * 1.081
+        self._save("energy-consumption-cost-high-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_cost_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
+        tariff = (18.75 + 7.56 + 0.75 + 2.3 + 0.6 + 0.02 + 0.7 + 0.7 + 0.6 + 1.2) * 1.081
+        self._save("energy-consumption-cost-low-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_cost_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
+
+        assert len(data_water) == 1
+
+        self._save("water-consumption-data.tsv", data_water[0]['data'], "sensor:sey_water_consumption", "m³", Mode.DATA_NO_BI_TARIFICATION_MODE)
+        tariff = (2.95 + 2.30) * 1.081
+        self._save("water-consumption-cost.tsv", data_water[0]['data'], "sensor:sey_water_consumption_cost", "CHF/m³", Mode.COST_NO_BI_TARIFICATION_MODE, tariff)
+
+    def _save(self, filename, data, entity_id, unit, mode : Mode, tariff: float = None):
         full_filename = os.path.join(self._folder, f"{self._date}-{filename}")
 
         self._save_data(full_filename, self._extract_data(data, entity_id, unit, mode, tariff))
@@ -220,7 +243,7 @@ class SeyDataSaver:
         if not os.path.exists(self._last_sums_filename):
             print(f"File does not exist: {self._last_sums_filename}. Let's assume this is the first execution")
             return
-        
+
         with open(self._last_sums_filename, "r", encoding="utf-8") as f:
             print(f"Loading file: {self._last_sums_filename}")
             self._sums = json.loads(f.read())
@@ -233,47 +256,3 @@ class SeyDataSaver:
             print(f"Saving file: {self._last_sums_filename}")
             self._sums['date'] = self._date
             f.write(json.dumps(self._sums))
-
-
-USERNAME = os.getenv("SEY_USERNAME")
-PASSWORD = os.getenv("SEY_PASSWORD")
-
-ELECTRICAL_CONTRACT_ID = os.getenv("SEY_ELECTRICAL_CONTRACT_ID")
-WATER_CONTRACT_ID = os.getenv("SEY_WATER_CONTRACT_ID")
-
-DATA_FOLDER = os.getenv("DATA_FOLDER")
-
-scrapper = SeyWebScraper()
-
-try:
-    scrapper.login(USERNAME, PASSWORD)
-    if len(sys.argv) > 1:
-        dt = datetime.strptime(sys.argv[1], "%Y%m%d")
-    else:
-        dt = datetime.now() - timedelta(days = 1)
-    electrical_json_data, water_json_data = scrapper.collect(ELECTRICAL_CONTRACT_ID, WATER_CONTRACT_ID, dt, DATA_FOLDER)
-    scrapper.logout()
-
-    saver = SeyDataSaver(DATA_FOLDER, dt)
-
-    saver.save("energy-production-data-high-tariff.tsv", electrical_json_data[0]['data'], "sensor:sey_energy_production_high_tariff", "kWh", Mode.DATA_BI_TARIFICATION_HIGH_TARIFF_MODE)
-    saver.save("energy-production-data-low-tariff.tsv", electrical_json_data[0]['data'], "sensor:sey_energy_production_low_tariff", "kWh", Mode.DATA_BI_TARIFICATION_LOW_TARIFF_MODE)
-    tariff = (18.10) * 1.081
-    saver.save("energy-production-cost-high-tariff.tsv", electrical_json_data[0]['data'], "sensor:sey_energy_production_cost_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
-    tariff = (18.10) * 1.081
-    saver.save("energy-production-cost-low-tariff.tsv", electrical_json_data[0]['data'], "sensor:sey_energy_production_cost_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
-
-    saver.save("energy-consumption-data-high-tariff.tsv", electrical_json_data[1]['data'], "sensor:sey_energy_consumption_high_tariff", "kWh", Mode.DATA_BI_TARIFICATION_HIGH_TARIFF_MODE)
-    saver.save("energy-consumption-data-low-tariff.tsv", electrical_json_data[1]['data'], "sensor:sey_energy_consumption_low_tariff", "kWh", Mode.DATA_BI_TARIFICATION_LOW_TARIFF_MODE)
-    tariff = (21.0 + 13.11 + 0.75 + 2.3 + 0.6 + 0.02 + 0.7 + 0.7 + 0.6 + 1.2) * 1.081
-    saver.save("energy-consumption-cost-high-tariff.tsv", electrical_json_data[1]['data'], "sensor:sey_energy_consumption_cost_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
-    tariff = (18.75 + 7.56 + 0.75 + 2.3 + 0.6 + 0.02 + 0.7 + 0.7 + 0.6 + 1.2) * 1.081
-    saver.save("energy-consumption-cost-low-tariff.tsv", electrical_json_data[1]['data'], "sensor:sey_energy_consumption_cost_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
-
-    saver.save("water-consumption-data.tsv", water_json_data[0]['data'], "sensor:sey_water_consumption", "m³", Mode.DATA_NO_BI_TARIFICATION_MODE)
-    tariff = (2.95 + 2.30) * 1.081
-    saver.save("water-consumption-cost.tsv", water_json_data[0]['data'], "sensor:sey_water_consumption_cost", "CHF/m³", Mode.COST_NO_BI_TARIFICATION_MODE, tariff)
-
-    saver.save_sums()
-finally:
-    scrapper.close()
