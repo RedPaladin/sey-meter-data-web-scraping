@@ -1,16 +1,14 @@
-name: Docker Image CI
+name: Build docker image
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_call:
+
+  workflow_dispatch:
 
 jobs:
-
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
 
