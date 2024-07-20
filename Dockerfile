@@ -29,7 +29,7 @@ ENV SEY_WATER_CONTRACT_ID=changeme
 ENV DATA_FOLDER=/data
 
 # Copy the module directory and schedule it to be run daily
-ADD sey_meter_data_web_scraping /usr/local/lib/python3.10/site-packages/
+COPY sey_meter_data_web_scraping/ /usr/local/lib/python3.10/site-packages/
 COPY crontab.conf /etc/crontabs/root
 
 # Run cron daemon in frontground
