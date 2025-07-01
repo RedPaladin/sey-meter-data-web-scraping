@@ -27,4 +27,4 @@ jobs:
         pip install -r requirements.txt
     - name: Test module
       run: |
-        SEY_USERNAME=${{secrets.SEY_USERNAME}} SEY_PASSWORD=${{secrets.SEY_PASSWORD}} SEY_ELECTRICAL_CONTRACT_ID=${{secrets.SEY_ELECTRICAL_CONTRACT_ID}} SEY_WATER_CONTRACT_ID=${{secrets.SEY_WATER_CONTRACT_ID}} python -m unittest discover -v
+        SEY_USERNAME=${{secrets.SEY_USERNAME}} SEY_PASSWORD=${{secrets.SEY_PASSWORD}} SEY_SUBJECT_ID=${{secrets.SEY_SUBJECT_ID}} SEY_ELECTRICAL_CONTRACT_ID=${{secrets.SEY_ELECTRICAL_CONTRACT_ID}} SEY_WATER_CONTRACT_ID=${{secrets.SEY_WATER_CONTRACT_ID}} python -m unittest discover -v
