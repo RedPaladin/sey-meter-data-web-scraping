@@ -12,11 +12,13 @@ class ImportDataTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self._username = os.getenv("SEY_USERNAME")
         self._password = os.getenv("SEY_PASSWORD")
+        self._subject_id = os.getenv("SEY_SUBJECT_ID")
         self._electrical_contract_id = os.getenv("SEY_ELECTRICAL_CONTRACT_ID")
         self._water_contract_id = os.getenv("SEY_WATER_CONTRACT_ID")
 
         self.assertIsNotNone(self._username, "Environment variable SEY_USERNAME is not set")
         self.assertIsNotNone(self._password, "Environment variable SEY_PASSWORD is not set")
+        self.assertIsNotNone(self._subject_id, "Environment variable SEY_SUBJECT_ID is not set")
         self.assertIsNotNone(self._electrical_contract_id, "Environment variable SEY_ELECTRICAL_CONTRACT_ID is not set")
         self.assertIsNotNone(self._water_contract_id, "Environment variable SEY_WATER_CONTRACT_ID is not set")
 
@@ -37,7 +39,7 @@ class ImportDataTestCase(unittest.TestCase):
 
             dt = datetime.now() - timedelta(days = 3)
             
-            data_electricity, data_water = scrapper.collect(self._electrical_contract_id, self._water_contract_id, dt)
+            data_electricity, data_water = scrapper.collect(self._electrical_contract_id, self._water_contract_id, self._subject_id, dt)
 
             save_data(os.path.join(OUTPUT_FOLDER, "data_electricity.json"), json.dumps(data_electricity, indent=3))
             save_data(os.path.join(OUTPUT_FOLDER, "data_water.json"), json.dumps(data_water, indent=3))

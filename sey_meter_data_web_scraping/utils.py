@@ -57,12 +57,13 @@ class SeyWebScraper:
     def login(self, username, password):
         ''' Login into SEY '''
 
-        self._driver.get("https://my.yverdon-energies.ch/ebp/login")
+        self._driver.get("https://my.yverdon-energies.ch/login")
 
-        login = self._driver.find_element(By.PARTIAL_LINK_TEXT, 'Vers le login')
-        self._screenshot_element(login, "login.png")
+        login_button = self._driver.find_element(By.XPATH, "//span[text()='Se connecter ici']").find_element(By.XPATH, "./ancestor::button")
 
-        ActionChains(self._driver).move_to_element(login).click().perform()
+        self._screenshot_element(login_button, "login.png")
+
+        ActionChains(self._driver).move_to_element(login_button).click().perform()
 
         username_element = self._driver.find_element(By.ID, "username")
 
@@ -86,11 +87,11 @@ class SeyWebScraper:
 
         self._driver.save_screenshot(os.path.join(self._output_folder, "screenshot1.png"))
 
-    def collect(self, electrical_contract_id, water_contract_id, date):
+    def collect(self, electrical_contract_id, water_contract_id, subject_id, date):
         ''' Collect the data from the SEY '''
 
         # Wait until this element is visible so we are sure that data are available
-        self._driver.find_element(By.XPATH, "//span[contains(text(),'HJ')]")
+        self._driver.find_element(By.XPATH, "//mat-icon[text()='person']")
 
         # Get the authorization from the Chrome log (this is all the magic comes from!)
         logs = self._driver.get_log("performance")
@@ -100,13 +101,13 @@ class SeyWebScraper:
         start_dt = datetime.combine(date, datetime.min.time())
         end_dt = datetime.combine(date + timedelta(days = 1), datetime.min.time()) - timedelta(minutes = 1)
 
-        meterdatavalues = requests.get(f"https://backend.yverdon-energies.ch/ebp/meterdatavalues?meteringpoint={electrical_contract_id}&dateFrom={start_dt.isoformat()}&dateTo={end_dt.isoformat()}&intervall=1", headers=header, timeout=10)
+        meterdatavalues = requests.get(f"https://my.yverdon-energies.ch/ebpapi/ebp/meterdatavalues/{electrical_contract_id}?subject_id={subject_id}&role=1&date_from={start_dt.isoformat()}&date_to={end_dt.isoformat()}&aggregation=2&compareActive=false", headers=header, timeout=10)
 
         # data in kWh, 1 sample / 1 hour
         electrical_json_data = json.loads(meterdatavalues.content.decode("utf-8"))
 
         # seems to work only with data from yesterday, not older. Why ?
-        meterdatavalues = requests.get(f"https://backend.yverdon-energies.ch/ebp/meterdatavalues?meteringpoint={water_contract_id}&dateFrom={start_dt.isoformat()}&dateTo={end_dt.isoformat()}&intervall=6", headers=header, timeout=10)
+        meterdatavalues = requests.get(f"https://my.yverdon-energies.ch/ebpapi/ebp/meterdatavalues/{water_contract_id}?subject_id={subject_id}&role=1&date_from={start_dt.isoformat()}&date_to={end_dt.isoformat()}&aggregation=2&compareActive=false", headers=header, timeout=10)
 
         # data in m3, 1 sample / 1 hour
         water_json_data = json.loads(meterdatavalues.content.decode("utf-8"))
@@ -116,17 +117,17 @@ class SeyWebScraper:
     def logout(self):
         ''' Logout from the SEY '''
 
-        user_element = self._driver.find_element(By.XPATH, "//span[contains(text(),'HJ')]")
+        user_button = self._driver.find_element(By.XPATH, "//mat-icon[text()='person']").find_element(By.XPATH, "./ancestor::button")
 
-        self._screenshot_element(user_element, "user.png")
+        self._screenshot_element(user_button, "user.png")
 
-        ActionChains(self._driver).move_to_element(user_element).click().perform()
+        ActionChains(self._driver).move_to_element(user_button).click().perform()
 
-        logout = self._driver.find_element(By.XPATH, "//button[contains(text(),'Logout')]")
+        logout_button = self._driver.find_element(By.XPATH, "//mat-icon[text()='logout']").find_element(By.XPATH, "./ancestor::button")
 
-        self._screenshot_element(logout, "logout.png")
+        self._screenshot_element(logout_button, "logout.png")
 
-        ActionChains(self._driver).move_to_element(logout).click().perform()
+        ActionChains(self._driver).move_to_element(logout_button).click().perform()
 
         self._driver.save_screenshot(os.path.join(self._output_folder, "screenshot2.png"))
 
@@ -213,24 +214,26 @@ class SeyDataSaver:
     def save(self, data_electricity, data_water):
         assert len(data_electricity) == 2
 
+        #  Tariff 2025 according to https://www.yverdon-energies.ch/electricite/#tarifs-reglements warning, this is in ct.
         self._save("energy-production-data-high-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_high_tariff", "kWh", Mode.DATA_BI_TARIFICATION_HIGH_TARIFF_MODE)
         self._save("energy-production-data-low-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_low_tariff", "kWh", Mode.DATA_BI_TARIFICATION_LOW_TARIFF_MODE)
-        tariff = (18.10) * 1.081
+        tariff = (12.20 + 1.50)
         self._save("energy-production-cost-high-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_cost_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
-        tariff = (18.10) * 1.081
+        tariff = (12.20 + 1.50)
         self._save("energy-production-cost-low-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_cost_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
 
         self._save("energy-consumption-data-high-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_high_tariff", "kWh", Mode.DATA_BI_TARIFICATION_HIGH_TARIFF_MODE)
         self._save("energy-consumption-data-low-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_low_tariff", "kWh", Mode.DATA_BI_TARIFICATION_LOW_TARIFF_MODE)
-        tariff = (21.0 + 13.11 + 0.75 + 2.3 + 0.6 + 0.02 + 0.7 + 0.7 + 0.6 + 1.2) * 1.081
+        tariff = (16.76 + 15.31 + 0.59 + 0.25 + 2.49 + 0.6 + 0.022 + 0.76 + 0.7 + 0.6) * 1.081
         self._save("energy-consumption-cost-high-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_cost_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
-        tariff = (18.75 + 7.56 + 0.75 + 2.3 + 0.6 + 0.02 + 0.7 + 0.7 + 0.6 + 1.2) * 1.081
+        tariff = (14.32 + 9.31 + 0.59 + 0.25 + 2.49 + 0.6 + 0.022 + 0.76 + 0.7 + 0.6) * 1.081
         self._save("energy-consumption-cost-low-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_cost_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
 
         assert len(data_water) == 1
 
+        # Tariff 2025 for water: https://www.yverdon-energies.ch/eau/#tarifs-reglements
         self._save("water-consumption-data.tsv", data_water[0]['data'], "sensor:sey_water_consumption", "m³", Mode.DATA_NO_BI_TARIFICATION_MODE)
-        tariff = (2.95 + 2.30) * 1.081
+        tariff = (2.95 + 2.30) * 1.081 # (Conditions de vente) + (Taxe d'épuration des eaux usées) * TVA 8.1%
         self._save("water-consumption-cost.tsv", data_water[0]['data'], "sensor:sey_water_consumption_cost", "CHF/m³", Mode.COST_NO_BI_TARIFICATION_MODE, tariff)
 
     def _save(self, filename, data, entity_id, unit, mode : Mode, tariff: float = None):

@@ -15,6 +15,7 @@ Docker image thats collects daily the electric and water meter data from the [Se
 | --- | --- |
 | SEY_USERNAME | Username to login into client portal |
 | SEY_PASSWORD | Password to login into client portal |
+| SEY_SUBJECT_ID | Subject ID given by SEY |
 | SEY_ELECTRICAL_CONTRACT_ID | ID of your electrical contract (get it on your client portal) |
 | SEY_WATER_CONTRACT_ID | ID of your water contract (get it on your client portal) |
 | DATA_FOLDER | Location where to store the data. Bind a folder with your host |
@@ -23,23 +24,17 @@ Docker image thats collects daily the electric and water meter data from the [Se
 `docker build . -t redpaladin751/sey-meter-data-web-scraping`
 
 ### Run the docker image
-`docker run --rm -it -e SEY_USERNAME=changeme -e SEY_PASSWORD=changeme -e SEY_ELECTRICAL_CONTRACT_ID=changeme -e SEY_WATER_CONTRACT_ID=changeme -e DATA_FOLDER=/data --mount type=bind,src=./data,dst=/data redpaladin751/sey-meter-data-web-scraping`
+`docker run --rm -it -e SEY_USERNAME=changeme -e SEY_PASSWORD=changeme -e SEY_SUBJECT_ID=changeme -e SEY_ELECTRICAL_CONTRACT_ID=changeme -e SEY_WATER_CONTRACT_ID=changeme -e DATA_FOLDER=/data --mount type=bind,src=./data,dst=/data redpaladin751/sey-meter-data-web-scraping`
 
 ## Work without docker
 
 ### Run the test
-`SEY_USERNAME=changeme SEY_PASSWORD=changeme SEY_ELECTRICAL_CONTRACT_ID=changeme SEY_WATER_CONTRACT_ID=changeme python -m unittest discover -v`
+`SEY_USERNAME=changeme SEY_PASSWORD=changeme SEY_SUBJECT_ID=changeme SEY_ELECTRICAL_CONTRACT_ID=changeme SEY_WATER_CONTRACT_ID=changeme python -m unittest discover -v`
 
 ### Run the package
-`SEY_USERNAME=changeme SEY_PASSWORD=changeme SEY_ELECTRICAL_CONTRACT_ID=changeme SEY_WATER_CONTRACT_ID=changeme DATA_FOLDER=data python -m sey_meter_data_web_scraping`
+`SEY_USERNAME=changeme SEY_PASSWORD=changeme SEY_SUBJECT_ID=changeme SEY_ELECTRICAL_CONTRACT_ID=changeme SEY_WATER_CONTRACT_ID=changeme DATA_FOLDER=data python -m sey_meter_data_web_scraping`
 
 ## TODO
-- [x] Convert JSON from API to CSV for HASS service import integrations
-- [x] Save the sums in a smarter way (if you execute the script twice)
-- [x] Rename output files with energy
 - [ ] Use Name field in hass db to set a friendly name to the sensors
-- [x] Generate cost report based on PDF's [electricity](EL-Tarifs-simplifie-2024.pdf) and [water](D-SERV-02-07-Tarif-eau.pdf)
-- [x] Automate building of Docker image with GitHub Actions
-- [ ] Improve logout of the client portal
 - [ ] Improve logging
 - [ ] Delete older data before generating new ones
