@@ -22,6 +22,7 @@ RUN pip cache purge
 # Environment variable for the script execution
 ENV SEY_USERNAME=changeme
 ENV SEY_PASSWORD=changeme
+ENV SEY_SUBJECT_ID=changeme
 
 ENV SEY_ELECTRICAL_CONTRACT_ID=changeme
 ENV SEY_WATER_CONTRACT_ID=changeme
