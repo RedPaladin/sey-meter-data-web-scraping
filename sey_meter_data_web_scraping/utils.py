@@ -55,7 +55,7 @@ class SeyWebScraper:
                 return { "Authorization" : str(l[0]) }
 
     def login(self, username, password):
-        ''' Login into SEY '''
+        print("Login into SEY")
 
         self._driver.get("https://my.yverdon-energies.ch/login")
 
@@ -88,7 +88,7 @@ class SeyWebScraper:
         self._driver.save_screenshot(os.path.join(self._output_folder, "screenshot1.png"))
 
     def collect(self, electrical_contract_id, water_contract_id, subject_id, date):
-        ''' Collect the data from the SEY '''
+        print("Collect the data from the SEY")
 
         # Wait until this element is visible so we are sure that data are available
         self._driver.find_element(By.XPATH, "//mat-icon[text()='person']")
@@ -105,6 +105,8 @@ class SeyWebScraper:
 
         # data in kWh, 1 sample / 1 hour
         electrical_json_data = json.loads(meterdatavalues.content.decode("utf-8"))
+        
+        self._save_json(f"electrical_data_{datetime.now().strftime('%Y%m%d')}.json", electrical_json_data)
 
         # seems to work only with data from yesterday, not older. Why ?
         meterdatavalues = requests.get(f"https://my.yverdon-energies.ch/ebpapi/ebp/meterdatavalues/{water_contract_id}?subject_id={subject_id}&role=1&date_from={start_dt.isoformat()}&date_to={end_dt.isoformat()}&aggregation=2&compareActive=false", headers=header, timeout=10)
@@ -112,10 +114,20 @@ class SeyWebScraper:
         # data in m3, 1 sample / 1 hour
         water_json_data = json.loads(meterdatavalues.content.decode("utf-8"))
 
+        self._save_json(f"water_json_data_{datetime.now().strftime('%Y%m%d')}.json", water_json_data)
+
         return electrical_json_data, water_json_data
+    
+    def _save_json(self, filename, data):
+        ''' Save the JSON data to a file '''
+
+        with open(os.path.join(self._output_folder, filename), "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+        print(f"Save json: {filename}")
 
     def logout(self):
-        ''' Logout from the SEY '''
+        print("Logout from the SEY")
 
         user_button = self._driver.find_element(By.XPATH, "//mat-icon[text()='person']").find_element(By.XPATH, "./ancestor::button")
 
@@ -134,6 +146,8 @@ class SeyWebScraper:
     def close(self):
         ''' Close the driver '''
         self._driver.quit()
+
+        print("Done! See you tomorrow!")
 
 class Mode(Enum):
     DATA_NO_BI_TARIFICATION_MODE = 0
@@ -212,29 +226,41 @@ class SeyDataSaver:
                 f.write(line + "\n")
 
     def save(self, data_electricity, data_water):
-        assert len(data_electricity) == 2
 
-        #  Tariff 2025 according to https://www.yverdon-energies.ch/electricite/#tarifs-reglements warning, this is in ct.
-        self._save("energy-production-data-high-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_high_tariff", "kWh", Mode.DATA_BI_TARIFICATION_HIGH_TARIFF_MODE)
-        self._save("energy-production-data-low-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_low_tariff", "kWh", Mode.DATA_BI_TARIFICATION_LOW_TARIFF_MODE)
-        tariff = (12.20 + 1.50)
-        self._save("energy-production-cost-high-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_cost_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
-        tariff = (12.20 + 1.50)
-        self._save("energy-production-cost-low-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_cost_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
+        if len(data_electricity) < 1:
+            print("ERROR: No data for production of electricity found")
 
-        self._save("energy-consumption-data-high-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_high_tariff", "kWh", Mode.DATA_BI_TARIFICATION_HIGH_TARIFF_MODE)
-        self._save("energy-consumption-data-low-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_low_tariff", "kWh", Mode.DATA_BI_TARIFICATION_LOW_TARIFF_MODE)
-        tariff = (16.76 + 15.31 + 0.59 + 0.25 + 2.49 + 0.6 + 0.022 + 0.76 + 0.7 + 0.6) * 1.081
-        self._save("energy-consumption-cost-high-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_cost_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
-        tariff = (14.32 + 9.31 + 0.59 + 0.25 + 2.49 + 0.6 + 0.022 + 0.76 + 0.7 + 0.6) * 1.081
-        self._save("energy-consumption-cost-low-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_cost_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
+        else:
+            print("Saving data of production of electricity")
+            #  Tariff 2025 according to https://www.yverdon-energies.ch/electricite/#tarifs-reglements warning, this is in ct.
+            self._save("energy-production-data-high-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_high_tariff", "kWh", Mode.DATA_BI_TARIFICATION_HIGH_TARIFF_MODE)
+            self._save("energy-production-data-low-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_low_tariff", "kWh", Mode.DATA_BI_TARIFICATION_LOW_TARIFF_MODE)
+            tariff = (12.20 + 1.50)
+            self._save("energy-production-cost-high-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_cost_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
+            tariff = (12.20 + 1.50)
+            self._save("energy-production-cost-low-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_cost_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
 
-        assert len(data_water) == 1
+        if len(data_electricity) < 2:
+            print("ERROR: No data for consumption of electricity found")
 
-        # Tariff 2025 for water: https://www.yverdon-energies.ch/eau/#tarifs-reglements
-        self._save("water-consumption-data.tsv", data_water[0]['data'], "sensor:sey_water_consumption", "m³", Mode.DATA_NO_BI_TARIFICATION_MODE)
-        tariff = (2.95 + 2.30) * 1.081 # (Conditions de vente) + (Taxe d'épuration des eaux usées) * TVA 8.1%
-        self._save("water-consumption-cost.tsv", data_water[0]['data'], "sensor:sey_water_consumption_cost", "CHF/m³", Mode.COST_NO_BI_TARIFICATION_MODE, tariff)
+        else:
+            print("Saving data of consumption of electricity")
+            self._save("energy-consumption-data-high-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_high_tariff", "kWh", Mode.DATA_BI_TARIFICATION_HIGH_TARIFF_MODE)
+            self._save("energy-consumption-data-low-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_low_tariff", "kWh", Mode.DATA_BI_TARIFICATION_LOW_TARIFF_MODE)
+            tariff = (16.76 + 15.31 + 0.59 + 0.25 + 2.49 + 0.6 + 0.022 + 0.76 + 0.7 + 0.6) * 1.081
+            self._save("energy-consumption-cost-high-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_cost_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
+            tariff = (14.32 + 9.31 + 0.59 + 0.25 + 2.49 + 0.6 + 0.022 + 0.76 + 0.7 + 0.6) * 1.081
+            self._save("energy-consumption-cost-low-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_cost_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
+
+        if len(data_water) < 1:
+            print("ERROR: No data for consumption of water found")
+
+        else:
+            # Tariff 2025 for water: https://www.yverdon-energies.ch/eau/#tarifs-reglements
+            print("Saving data of water consumption")
+            self._save("water-consumption-data.tsv", data_water[0]['data'], "sensor:sey_water_consumption", "m³", Mode.DATA_NO_BI_TARIFICATION_MODE)
+            tariff = (2.95 + 2.30) * 1.081 # (Conditions de vente) + (Taxe d'épuration des eaux usées) * TVA 8.1%
+            self._save("water-consumption-cost.tsv", data_water[0]['data'], "sensor:sey_water_consumption_cost", "CHF/m³", Mode.COST_NO_BI_TARIFICATION_MODE, tariff)
 
     def _save(self, filename, data, entity_id, unit, mode : Mode, tariff: float = None):
         full_filename = os.path.join(self._folder, f"{self._date}-{filename}")
