@@ -106,7 +106,7 @@ class SeyWebScraper:
         # data in kWh, 1 sample / 1 hour
         electrical_json_data = json.loads(meterdatavalues.content.decode("utf-8"))
         
-        self._save_json(f"electrical_data_{datetime.now().strftime('%Y%m%d')}.json", electrical_json_data)
+        self._save_json(f"electrical_data_{date.strftime('%Y%m%d')}.json", electrical_json_data)
 
         # seems to work only with data from yesterday, not older. Why ?
         meterdatavalues = requests.get(f"https://my.yverdon-energies.ch/ebpapi/ebp/meterdatavalues/{water_contract_id}?subject_id={subject_id}&role=1&date_from={start_dt.isoformat()}&date_to={end_dt.isoformat()}&aggregation=2&compareActive=false", headers=header, timeout=10)
@@ -114,7 +114,7 @@ class SeyWebScraper:
         # data in m3, 1 sample / 1 hour
         water_json_data = json.loads(meterdatavalues.content.decode("utf-8"))
 
-        self._save_json(f"water_json_data_{datetime.now().strftime('%Y%m%d')}.json", water_json_data)
+        self._save_json(f"water_json_data_{date.strftime('%Y%m%d')}.json", water_json_data)
 
         return electrical_json_data, water_json_data
     
