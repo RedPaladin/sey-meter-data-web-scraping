@@ -34,4 +34,4 @@ COPY sey_meter_data_web_scraping /usr/local/lib/python3.10/site-packages/sey_met
 COPY crontab.conf /etc/crontabs/root
 
 # Run cron daemon in frontground
-CMD python -m sey_meter_data_web_scraping && crond -f -l 2
+CMD python -m sey_meter_data_web_scraping || crond -f
