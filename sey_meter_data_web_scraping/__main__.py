@@ -19,7 +19,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         dt = datetime.strptime(sys.argv[1], "%Y%m%d")
     else:
-        dt = datetime.now() - timedelta(days = 1)
+        dt = datetime.now() - timedelta(days = 3)
 
     collect_meterdatavalues(USERNAME, PASSWORD, ELECTRICAL_CONTRACT_ID, WATER_CONTRACT_ID, SUBJECT_ID, DATA_FOLDER, dt)
 
