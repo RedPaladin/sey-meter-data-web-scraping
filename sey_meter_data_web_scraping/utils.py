@@ -9,6 +9,9 @@ from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 class SeyWebScraper:
     ''' Class to Web Scrap from SEY '''
 
@@ -27,6 +30,8 @@ class SeyWebScraper:
         self._driver = webdriver.Chrome(options=chrome_options)
         self._driver.implicitly_wait(20)
         self._output_folder = output_folder
+
+        self._wait = WebDriverWait(self._driver, 10)  # Wait up to 10 seconds
 
         assert os.path.exists(self._output_folder)
 
@@ -83,15 +88,15 @@ class SeyWebScraper:
 
         ActionChains(self._driver).move_to_element(sign_in).click().perform()
 
-        #print(self._driver.get_cookies())
-
-        self._driver.save_screenshot(os.path.join(self._output_folder, "screenshot1.png"))
-
     def collect(self, electrical_contract_id, water_contract_id, subject_id, date):
         print("Collect the data from the SEY")
 
-        # Wait until this element is visible so we are sure that data are available
-        self._driver.find_element(By.XPATH, "//mat-icon[text()='person']")
+        # Wait until this element is visible so we are sure the keycloak session is open
+        self._wait.until(
+            EC.visibility_of_element_located((By.XPATH, "//div[normalize-space(text())='Contrats']"))
+        )
+        
+        self._driver.save_screenshot(os.path.join(self._output_folder, "screenshot1.png"))
 
         # Get the authorization from the Chrome log (this is all the magic comes from!)
         logs = self._driver.get_log("performance")
