@@ -27,9 +27,9 @@ class ExportCsvTestCase(unittest.TestCase):
 
         saver = SeyDataSaver(OUTPUT_FOLDER, dt)
 
-        data_electricity = load_data(os.path.join(REFERENCE_FOLDER, "20240620-electricity-data.json"))
+        data_electricity = load_data(os.path.join(REFERENCE_FOLDER, "electrical_data_20250818.json"))
 
-        data_water = load_data(os.path.join(REFERENCE_FOLDER, "20240620-water-data.json"))
+        data_water = load_data(os.path.join(REFERENCE_FOLDER, "water_json_data_20250818.json"))
 
         saver.save(data_electricity, data_water)
 
