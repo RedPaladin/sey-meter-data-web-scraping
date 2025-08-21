@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 from datetime import datetime, timedelta
 from enum import Enum
@@ -24,6 +24,9 @@ class SeyWebScraper:
         chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument("--window-size=1920,1080")
+
+        self._user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        chrome_options.add_argument(f'--user-agent={self._user_agent}')
 
         chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
 
@@ -102,6 +105,7 @@ class SeyWebScraper:
         logs = self._driver.get_log("performance")
 
         header = self._get_authorization_token_id(logs)
+        header["User-Agent"] = self._user_agent
 
         start_dt = datetime.combine(date, datetime.min.time())
         end_dt = datetime.combine(date + timedelta(days = 1), datetime.min.time()) - timedelta(minutes = 1)
@@ -232,6 +236,8 @@ class SeyDataSaver:
 
     def save(self, data_electricity, data_water):
 
+        data_electricity = data_electricity['timeseries']
+
         if len(data_electricity) < 1:
             print("ERROR: No data for production of electricity found")
 
@@ -256,6 +262,8 @@ class SeyDataSaver:
             self._save("energy-consumption-cost-high-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_cost_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
             tariff = (14.32 + 9.31 + 0.59 + 0.25 + 2.49 + 0.6 + 0.022 + 0.76 + 0.7 + 0.6) * 1.081
             self._save("energy-consumption-cost-low-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_cost_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
+
+        data_water = data_water['timeseries']
 
         if len(data_water) < 1:
             print("ERROR: No data for consumption of water found")
