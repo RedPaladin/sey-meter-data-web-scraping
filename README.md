@@ -35,6 +35,9 @@ Docker image thats collects daily the electric and water meter data from the [Se
 `SEY_USERNAME=changeme SEY_PASSWORD=changeme SEY_SUBJECT_ID=changeme SEY_ELECTRICAL_CONTRACT_ID=changeme SEY_WATER_CONTRACT_ID=changeme DATA_FOLDER=data python -m sey_meter_data_web_scraping`
 
 ## TODO
-- [ ] Use Name field in hass db to set a friendly name to the sensors
-- [ ] Add DEBUG mode to optionaly export JSON format from SEY API
-- [ ] Test with sensor template (state: None and StateClass set to TOTAL_INCREASE) instead of external data
+- [ ] Use template sensor (template_value: None and StateClass set to TOTAL_INCREASE) to display friendly name in HA
+- [ ] Use timespan for data collection between last values date and yesterday
+- [ ] Get automatically the subject id
+- [ ] Change schedule in crontab 3 times a day to recover temporary down time of the customer portal
+- [ ] Transfer credentials to .env instead of environment variables (more secure)
+- [ ] Add DEBUG mode to optionally export JSON format from SEY API
