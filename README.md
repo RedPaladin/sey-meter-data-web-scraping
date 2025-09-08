@@ -36,8 +36,9 @@ Docker image thats collects daily the electric and water meter data from the [Se
 
 ## TODO
 - [ ] Use template sensor (template_value: None and StateClass set to TOTAL_INCREASE) to display friendly name in HA
-- [ ] Use timespan for data collection between last values date and yesterday
+- [ ] Create outputs (screenshot, json) generated during execution of the script in a separate folder. Delete it if everything went well.
+- [ ] Load the sum data as soon as possible to check if data have been already imported the current day. So we can schedule the execution of the script every hour without accessing to the portal
 - [ ] Get automatically the subject id
-- [ ] Change schedule in crontab 3 times a day to recover temporary down time of the customer portal
+- [ ] Implement more "aggressive" scheduling after capabilities check. Days -2 before at 1am!
 - [ ] Transfer credentials to .env instead of environment variables (more secure)
 - [ ] Add DEBUG mode to optionally export JSON format from SEY API
