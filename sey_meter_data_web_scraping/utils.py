@@ -244,24 +244,24 @@ class SeyDataSaver:
         else:
             print("Saving data of production of electricity")
             #  Tariff 2025 according to https://www.yverdon-energies.ch/electricite/#tarifs-reglements warning, this is in ct.
-            self._save("energy-production-data-high-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_high_tariff", "kWh", Mode.DATA_BI_TARIFICATION_HIGH_TARIFF_MODE)
-            self._save("energy-production-data-low-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_low_tariff", "kWh", Mode.DATA_BI_TARIFICATION_LOW_TARIFF_MODE)
+            self._save("energy-production-data-high-tariff.tsv", data_electricity[0]['data'], "sensor.sey_energy_returned_to_grid_high_tariff", "kWh", Mode.DATA_BI_TARIFICATION_HIGH_TARIFF_MODE)
+            self._save("energy-production-data-low-tariff.tsv", data_electricity[0]['data'], "sensor.sey_energy_returned_to_grid_low_tariff", "kWh", Mode.DATA_BI_TARIFICATION_LOW_TARIFF_MODE)
             tariff = (12.20 + 1.50)
-            self._save("energy-production-cost-high-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_cost_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
+            self._save("energy-production-cost-high-tariff.tsv", data_electricity[0]['data'], "sensor.sey_cost_energy_returned_to_grid_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
             tariff = (12.20 + 1.50)
-            self._save("energy-production-cost-low-tariff.tsv", data_electricity[0]['data'], "sensor:sey_energy_production_cost_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
+            self._save("energy-production-cost-low-tariff.tsv", data_electricity[0]['data'], "sensor.sey_cost_energy_returned_to_grid_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
 
         if len(data_electricity) < 2:
             print("ERROR: No data for consumption of electricity found")
 
         else:
             print("Saving data of consumption of electricity")
-            self._save("energy-consumption-data-high-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_high_tariff", "kWh", Mode.DATA_BI_TARIFICATION_HIGH_TARIFF_MODE)
-            self._save("energy-consumption-data-low-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_low_tariff", "kWh", Mode.DATA_BI_TARIFICATION_LOW_TARIFF_MODE)
+            self._save("energy-consumption-data-high-tariff.tsv", data_electricity[1]['data'], "sensor.sey_energy_consumption_high_tariff", "kWh", Mode.DATA_BI_TARIFICATION_HIGH_TARIFF_MODE)
+            self._save("energy-consumption-data-low-tariff.tsv", data_electricity[1]['data'], "sensor.sey_energy_consumption_low_tariff", "kWh", Mode.DATA_BI_TARIFICATION_LOW_TARIFF_MODE)
             tariff = (16.76 + 15.31 + 0.59 + 0.25 + 2.49 + 0.6 + 0.022 + 0.76 + 0.7 + 0.6) * 1.081
-            self._save("energy-consumption-cost-high-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_cost_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
+            self._save("energy-consumption-cost-high-tariff.tsv", data_electricity[1]['data'], "sensor.sey_cost_energy_consumption_high_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_HIGH_TARIFF_MODE, tariff / 100.0)
             tariff = (14.32 + 9.31 + 0.59 + 0.25 + 2.49 + 0.6 + 0.022 + 0.76 + 0.7 + 0.6) * 1.081
-            self._save("energy-consumption-cost-low-tariff.tsv", data_electricity[1]['data'], "sensor:sey_energy_consumption_cost_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
+            self._save("energy-consumption-cost-low-tariff.tsv", data_electricity[1]['data'], "sensor.sey_cost_energy_consumption_low_tariff", "CHF/kWh", Mode.COST_BI_TARIFICATION_LOW_TARIFF_MODE, tariff / 100.0)
 
         data_water = data_water['timeseries']
 
@@ -271,9 +271,9 @@ class SeyDataSaver:
         else:
             # Tariff 2025 for water: https://www.yverdon-energies.ch/eau/#tarifs-reglements
             print("Saving data of water consumption")
-            self._save("water-consumption-data.tsv", data_water[0]['data'], "sensor:sey_water_consumption", "m³", Mode.DATA_NO_BI_TARIFICATION_MODE)
+            self._save("water-consumption-data.tsv", data_water[0]['data'], "sensor.sey_water_consumption", "m³", Mode.DATA_NO_BI_TARIFICATION_MODE)
             tariff = (2.95 + 2.30) * 1.081 # (Conditions de vente) + (Taxe d'épuration des eaux usées) * TVA 8.1%
-            self._save("water-consumption-cost.tsv", data_water[0]['data'], "sensor:sey_water_consumption_cost", "CHF/m³", Mode.COST_NO_BI_TARIFICATION_MODE, tariff)
+            self._save("water-consumption-cost.tsv", data_water[0]['data'], "sensor.sey_water_cost", "CHF/m³", Mode.COST_NO_BI_TARIFICATION_MODE, tariff)
 
     def _save(self, filename, data, entity_id, unit, mode : Mode, tariff: float = None):
         full_filename = os.path.join(self._folder, f"{self._date}-{filename}")
