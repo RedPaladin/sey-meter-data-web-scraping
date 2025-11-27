@@ -27,7 +27,7 @@ ENV SEY_SUBJECT_ID=changeme
 ENV SEY_ELECTRICAL_CONTRACT_ID=changeme
 ENV SEY_WATER_CONTRACT_ID=changeme
 
-ENV DATA_FOLDER=/data
+ENV DATA_FOLDER=/homeassistant/data
 
 # Copy the module directory and schedule it to be run daily
 COPY sey_meter_data_web_scraping /usr/local/lib/python3.10/site-packages/sey_meter_data_web_scraping
