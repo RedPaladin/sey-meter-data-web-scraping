@@ -73,6 +73,11 @@ class SeyWebScraper:
 
         ActionChains(self._driver).move_to_element(login_button).click().perform()
 
+        wait = WebDriverWait(self._driver, 10)
+        username_element = wait.until(
+            EC.presence_of_element_located((By.ID, "username"))
+        )
+
         username_element = self._driver.find_element(By.ID, "username")
 
         username_element.send_keys(username)
