@@ -1,23 +1,20 @@
-FROM python:3.10-alpine
-
-# update apk repo
-RUN echo "http://dl-4.alpinelinux.org/alpine/v3.14/main" >> /etc/apk/repositories && \
-    echo "http://dl-4.alpinelinux.org/alpine/v3.14/community" >> /etc/apk/repositories
+ARG BUILD_FROM=ghcr.io/home-assistant/base-python:3.14-alpine3.24
+FROM ${BUILD_FROM}
 
 # install chromedriver
-RUN apk update
-RUN apk add --no-cache chromium chromium-chromedriver tzdata
+RUN apk update && \
+    apk add --no-cache chromium chromium-chromedriver tzdata
 
 ENV TZ=Europe/Zurich
 
 # upgrade pip
-RUN pip install --upgrade pip
+RUN python3 -m pip install --upgrade pip
 
 # install selenium and requests
 ADD requirements.txt /
-RUN pip install -r /requirements.txt
+RUN python3 -m pip install -r /requirements.txt
 
-RUN pip cache purge
+#RUN python3 -m pip cache purge
 
 # Environment variable for the script execution
 ENV SEY_USERNAME=changeme
@@ -28,10 +25,20 @@ ENV SEY_ELECTRICAL_CONTRACT_ID=changeme
 ENV SEY_WATER_CONTRACT_ID=changeme
 
 ENV DATA_FOLDER=/homeassistant/data
+ENV PYTHONPATH=/app
 
 # Copy the module directory and schedule it to be run daily
-COPY sey_meter_data_web_scraping /usr/local/lib/python3.10/site-packages/sey_meter_data_web_scraping
+COPY sey_meter_data_web_scraping /app/sey_meter_data_web_scraping
 COPY crontab.conf /etc/crontabs/root
 
-# Run cron daemon in frontground
-CMD python -m sey_meter_data_web_scraping || crond -f
+# Ensure package is available in site-packages so python3 -m can import it
+RUN python3 - <<'PY'
+import site, shutil, os
+src = '/app/sey_meter_data_web_scraping'
+dst = site.getsitepackages()[0] + '/sey_meter_data_web_scraping'
+if os.path.exists(src) and not os.path.exists(dst):
+    shutil.copytree(src, dst)
+PY
+
+# Run cron daemon in foreground
+CMD python3 -m sey_meter_data_web_scraping || crond -f

@@ -1,6 +1,6 @@
 name: "SEY meter data web scraping"
 description: "Web scraping of electric and water meter data from Service des Energies d'Yverdon"
-version: "0.0.1"
+version: "0.0.2"
 slug: "sey-meter-data-web-scraping"
 init: false
 arch:
@@ -9,7 +9,20 @@ arch:
   - armhf
   - armv7
   - i386
-
+options:
+  sey_username: ""
+  sey_password: ""
+  sey_subject_id: ""
+  sey_electrical_contract_id: ""
+  sey_water_contract_id: ""
+  data_folder: "/config/sey_meter_data_web_scraping"
+schema:
+  sey_username: str
+  sey_password: password
+  sey_subject_id: str
+  sey_electrical_contract_id: str
+  sey_water_contract_id: str
+  data_folder: str
 map:
   - type: homeassistant_config
     read_only: False
