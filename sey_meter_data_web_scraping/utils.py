@@ -6,7 +6,7 @@ from enum import Enum
 import requests
 
 from selenium import webdriver
-from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
 
 from selenium.webdriver.support.ui import WebDriverWait
@@ -42,6 +42,35 @@ class SeyWebScraper:
         with open(os.path.join(self._output_folder, filename), "wb") as f:
             f.write(elem.screenshot_as_png)
 
+    def _safe_click(self, by, selector, filename=None, timeout=10, retries=3):
+        for attempt in range(1, retries + 1):
+            try:
+                element = WebDriverWait(self._driver, timeout).until(
+                    EC.element_to_be_clickable((by, selector))
+                )
+                if filename:
+                    self._screenshot_element(element, filename)
+                element.click()
+                return
+            except StaleElementReferenceException:
+                if attempt == retries:
+                    raise
+
+    def _safe_send_keys(self, by, selector, keys, filename=None, timeout=10, retries=3):
+        for attempt in range(1, retries + 1):
+            try:
+                element = WebDriverWait(self._driver, timeout).until(
+                    EC.presence_of_element_located((by, selector))
+                )
+                if filename:
+                    self._screenshot_element(element, filename)
+                element.clear()
+                element.send_keys(keys)
+                return
+            except StaleElementReferenceException:
+                if attempt == retries:
+                    raise
+
     def _findkeys(self, node, kv):
         if isinstance(node, list):
             for i in node:
@@ -67,34 +96,14 @@ class SeyWebScraper:
 
         self._driver.get("https://my.yverdon-energies.ch/login")
 
-        login_button = self._driver.find_element(By.XPATH, "//span[text()='Se connecter ici']").find_element(By.XPATH, "./ancestor::button")
+        self._safe_click(By.XPATH, "//span[text()='Se connecter ici']/ancestor::button", "login.png")
 
-        self._screenshot_element(login_button, "login.png")
-
-        ActionChains(self._driver).move_to_element(login_button).click().perform()
-
-        wait = WebDriverWait(self._driver, 10)
-        username_element = wait.until(
-            EC.presence_of_element_located((By.ID, "username"))
-        )
-
-        username_element = self._driver.find_element(By.ID, "username")
-
-        username_element.send_keys(username)
-
-        self._screenshot_element(username_element, "username.png")
-
-        password_element = self._driver.find_element(By.ID, "password")
-
-        password_element.send_keys(password)
-
-        self._screenshot_element(password_element, "password.png")
+        self._safe_send_keys(By.ID, "username", username, "username.png")
+        self._safe_send_keys(By.ID, "password", password, "password.png")
 
         self._driver.save_screenshot(os.path.join(self._output_folder, "screenshot0.png"))
 
-        sign_in = self._driver.find_element(By.ID, "kc-login")
-
-        ActionChains(self._driver).move_to_element(sign_in).click().perform()
+        self._safe_click(By.ID, "kc-login")
 
     def collect(self, electrical_contract_id, water_contract_id, subject_id, date):
         print("Collect the data from the SEY")
@@ -143,17 +152,8 @@ class SeyWebScraper:
     def logout(self):
         print("Logout from the SEY")
 
-        user_button = self._driver.find_element(By.XPATH, "//mat-icon[text()='person']").find_element(By.XPATH, "./ancestor::button")
-
-        self._screenshot_element(user_button, "user.png")
-
-        ActionChains(self._driver).move_to_element(user_button).click().perform()
-
-        logout_button = self._driver.find_element(By.XPATH, "//mat-icon[text()='logout']").find_element(By.XPATH, "./ancestor::button")
-
-        self._screenshot_element(logout_button, "logout.png")
-
-        ActionChains(self._driver).move_to_element(logout_button).click().perform()
+        self._safe_click(By.XPATH, "//mat-icon[text()='person']/ancestor::button", "user.png")
+        self._safe_click(By.XPATH, "//mat-icon[text()='logout']/ancestor::button", "logout.png")
 
         self._driver.save_screenshot(os.path.join(self._output_folder, "screenshot2.png"))
 
