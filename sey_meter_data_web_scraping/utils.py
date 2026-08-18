@@ -6,11 +6,13 @@ from enum import Enum
 import requests
 
 from selenium import webdriver
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 from selenium.webdriver.common.by import By
 
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+WAIT_TIMEOUT = 20  # Default timeout in seconds for all WebDriverWait calls
 
 class SeyWebScraper:
     ''' Class to Web Scrap from SEY '''
@@ -31,10 +33,10 @@ class SeyWebScraper:
         chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
 
         self._driver = webdriver.Chrome(options=chrome_options)
-        self._driver.implicitly_wait(20)
+        # No implicit wait: all element lookups use explicit WebDriverWait below.
+        # Mixing implicit and explicit waits makes Selenium's polling/timeout
+        # behavior unpredictable.
         self._output_folder = output_folder
-
-        self._wait = WebDriverWait(self._driver, 10)  # Wait up to 10 seconds
 
         assert os.path.exists(self._output_folder)
 
@@ -42,7 +44,11 @@ class SeyWebScraper:
         with open(os.path.join(self._output_folder, filename), "wb") as f:
             f.write(elem.screenshot_as_png)
 
-    def _safe_click(self, by, selector, filename=None, timeout=10, retries=3):
+    def _on_wait_failure(self, selector, attempt):
+        error_filename = f"error_attempt{attempt}_{''.join(c if c.isalnum() else '_' for c in selector)}.png"
+        self._driver.save_screenshot(os.path.join(self._output_folder, error_filename))
+
+    def _safe_click(self, by, selector, filename=None, timeout=WAIT_TIMEOUT, retries=3):
         for attempt in range(1, retries + 1):
             try:
                 element = WebDriverWait(self._driver, timeout).until(
@@ -52,11 +58,12 @@ class SeyWebScraper:
                     self._screenshot_element(element, filename)
                 element.click()
                 return
-            except StaleElementReferenceException:
+            except (StaleElementReferenceException, TimeoutException):
                 if attempt == retries:
+                    self._on_wait_failure(selector, attempt)
                     raise
 
-    def _safe_send_keys(self, by, selector, keys, filename=None, timeout=10, retries=3):
+    def _safe_send_keys(self, by, selector, keys, filename=None, timeout=WAIT_TIMEOUT, retries=3):
         for attempt in range(1, retries + 1):
             try:
                 element = WebDriverWait(self._driver, timeout).until(
@@ -67,8 +74,9 @@ class SeyWebScraper:
                 element.clear()
                 element.send_keys(keys)
                 return
-            except StaleElementReferenceException:
+            except (StaleElementReferenceException, TimeoutException):
                 if attempt == retries:
+                    self._on_wait_failure(selector, attempt)
                     raise
 
     def _findkeys(self, node, kv):
@@ -109,7 +117,8 @@ class SeyWebScraper:
         print("Collect the data from the SEY")
 
         # Wait until this element is visible so we are sure the keycloak session is open
-        self._wait.until(
+        wait = WebDriverWait(self._driver, WAIT_TIMEOUT)
+        wait.until(
             EC.visibility_of_element_located((By.XPATH, "//div[normalize-space(text())='Contrats']"))
         )
         
