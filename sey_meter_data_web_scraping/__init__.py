@@ -16,7 +16,6 @@ def collect_meterdatavalues(username, password, electrical_contract_id, water_co
         saver = SeyDataSaver(data_folder, dt)
 
         saver.save(data_electricity, data_water, prices)
-
-        saver.save_sums()
+        
     finally:
         scrapper.close()
