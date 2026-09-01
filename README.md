@@ -2,7 +2,7 @@
 Home Assistant add-on (and Docker image) that collects daily electric and water meter data from the [Service des Energies d'Yverdon](https://www.yverdon-energies.ch/).
 * Collect the meter data of electric and water from the client portal using [Selenium](https://www.selenium.dev/) and Chromium
 * Transform the data into .csv files in order to be imported in Home Assistant using the integration: https://github.com/klausj1/homeassistant-statistics
-* Data collection is executed when the add-on/container starts, then continues daily at 3 am while it is running (can be changed by editing `crontab.conf`, but be careful, data may not be available if it is too early). Data are often not available immediately. So the script gets the data from 7 days earlier each day to reduce the risk of missing delayed data.
+* Data collection is executed when the add-on/container starts, then continues every hour while it is running (can be changed by editing `crontab.conf`). Data are often not available immediately. So the script gets the data from 7 days earlier each day to reduce the risk of missing delayed data.
 * Generate files with unique name containing the timestamp of the data collection.
 * Each generated file reports per-interval consumption deltas, so the script can safely be re-executed for the same day (it simply regenerates that day's files) without any risk of double-counting.
 
@@ -55,7 +55,7 @@ data_folder: "/config/sey_meter_data_web_scraping"
 This add-on supports these Home Assistant architectures: `aarch64`, `amd64`, `armhf`, `armv7`, `i386`.
 
 ### 5) Start the add-on
-Start the add-on from the Home Assistant UI. Data collection is triggered once at startup, then runs every day at 3 am.
+Start the add-on from the Home Assistant UI. Data collection is every hour.
 
 ### 6) Home Assistant example to import generated files
 To import generated CSV files in Home Assistant, you can use this package example:
@@ -66,7 +66,7 @@ What this example provides:
 
 * Template sensors used to expose imported energy/water values in Home Assistant.
 * A reusable import script based on `import_statistics.import_from_file`.
-* An automation that imports all generated files daily at `03:30:00` (after the add-on run at 3 am).
+* An automation that imports all generated files (this may need to be adjusted based on your data availability and collection timing).
 
 How to use it:
 
