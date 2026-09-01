@@ -23,13 +23,13 @@ class ExportCsvTestCase(unittest.TestCase):
             with open(filename, "r", encoding="utf-8") as f:
                 return json.loads(f.read())
 
-        dt = datetime(2024, 6, 20)
+        dt = datetime(2026, 9, 1)
 
         saver = SeyDataSaver(OUTPUT_FOLDER, dt)
 
-        data_electricity = load_data(os.path.join(REFERENCE_FOLDER, "electrical_data_20250818.json"))
+        data_electricity = load_data(os.path.join(REFERENCE_FOLDER, "electrical_data_20260829.json"))
 
-        data_water = load_data(os.path.join(REFERENCE_FOLDER, "water_json_data_20250818.json"))
+        data_water = load_data(os.path.join(REFERENCE_FOLDER, "water_json_data_20260829.json"))
 
         prices = {
             "electricity_consumption_high_tariff": (16.76 + 15.31 + 0.59 + 0.25 + 2.49 + 0.6 + 0.022 + 0.76 + 0.7 + 0.6) * 1.081 / 100.0,
@@ -39,10 +39,6 @@ class ExportCsvTestCase(unittest.TestCase):
         }
 
         saver.save(data_electricity, data_water, prices)
-
-        saver.save_sums()
-
-        self.assertTrue(os.path.exists(os.path.join(OUTPUT_FOLDER, "last_sums.json")))
 
     def tearDown(self):
         if os.path.exists(OUTPUT_FOLDER):

@@ -74,7 +74,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         dt = datetime.strptime(sys.argv[1], "%Y%m%d")
     else:
-        dt = datetime.now() - timedelta(days = 2)
+        dt = datetime.now() - timedelta(days = 7)
 
     collect_meterdatavalues(
         settings["SEY_USERNAME"],

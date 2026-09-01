@@ -2,10 +2,9 @@
 Home Assistant add-on (and Docker image) that collects daily electric and water meter data from the [Service des Energies d'Yverdon](https://www.yverdon-energies.ch/).
 * Collect the meter data of electric and water from the client portal using [Selenium](https://www.selenium.dev/) and Chromium
 * Transform the data into .csv files in order to be imported in Home Assistant using the integration: https://github.com/klausj1/homeassistant-statistics
-* Data collection is executed when the add-on/container starts, then continues daily at 3 am while it is running (can be changed by editing `crontab.conf`, but be careful, data may not be available if it is too early). Data are often not available immediately. So the script gets the data from 2 days earlier each day to reduce the risk of missing delayed data.
+* Data collection is executed when the add-on/container starts, then continues daily at 3 am while it is running (can be changed by editing `crontab.conf`, but be careful, data may not be available if it is too early). Data are often not available immediately. So the script gets the data from 7 days earlier each day to reduce the risk of missing delayed data.
 * Generate files with unique name containing the timestamp of the data collection.
-> [!IMPORTANT]  
-> The script can be executed only once a day, not more. Because a file containing the total of electricity and water needs to be updated each time the script is executed. The script prevents to be executed two times already.
+* Each generated file reports per-interval consumption deltas, so the script can safely be re-executed for the same day (it simply regenerates that day's files) without any risk of double-counting.
 
 ## Home Assistant add-on installation (recommended)
 
@@ -32,6 +31,15 @@ Set the following options in the add-on configuration:
 | sey_electrical_contract_id | ID of your electrical contract (get it on your client portal) |
 | sey_water_contract_id | ID of your water contract (get it on your client portal) |
 | data_folder | Location where to store the data (default: /config/sey_meter_data_web_scraping) |
+
+This add-on requires `homeassistant_api: true` (already set in `config.yaml`) so it can read electricity and water tariffs from Home Assistant sensors via the Supervisor API, instead of having them hardcoded. Make sure the following sensors exist in your Home Assistant instance before starting the add-on:
+
+| Sensor entity | Expected unit |
+| --- | --- |
+| sensor.electricity_price_consumption_high_tariff | ct/kWh |
+| sensor.electricity_price_consumption_low_tariff | ct/kWh |
+| sensor.electricity_price_returned_to_grid_tariff | ct/kWh |
+| sensor.water_price_consumption_tariff | CHF/m³ |
 
 Example configuration:
 
@@ -69,7 +77,4 @@ How to use it:
 
 ## TODO
 - [ ] Create outputs (screenshot, json) generated during execution of the script in a separate folder. Delete it if everything went well.
-- [ ] Load the sum data as soon as possible to check if data have been already imported the current day. So we can schedule the execution of the script every hour without accessing to the portal
 - [ ] Get automatically the subject id
-- [ ] Implement more "aggressive" scheduling after capabilities check. Days -2 before at 1am!
-- [ ] Add DEBUG mode to optionally export JSON format from SEY API

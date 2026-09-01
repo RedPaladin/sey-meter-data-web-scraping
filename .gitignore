@@ -165,3 +165,4 @@ env.txt
 data_test/
 /data/
 .env.local
+.vscode/
