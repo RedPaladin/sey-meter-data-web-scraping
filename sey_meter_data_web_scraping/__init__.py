@@ -2,7 +2,7 @@
 
 from .utils import SeyDataSaver, SeyWebScraper
 
-def collect_meterdatavalues(username, password, electrical_contract_id, water_contract_id, subject_id, data_folder, dt):
+def collect_meterdatavalues(username, password, electrical_contract_id, water_contract_id, subject_id, data_folder, dt, prices):
     ''' Collect the meter data values '''
 
     scrapper = SeyWebScraper(data_folder)
@@ -15,7 +15,7 @@ def collect_meterdatavalues(username, password, electrical_contract_id, water_co
 
         saver = SeyDataSaver(data_folder, dt)
 
-        saver.save(data_electricity, data_water)
+        saver.save(data_electricity, data_water, prices)
 
         saver.save_sums()
     finally:

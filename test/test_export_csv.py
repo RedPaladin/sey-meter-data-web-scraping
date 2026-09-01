@@ -31,7 +31,14 @@ class ExportCsvTestCase(unittest.TestCase):
 
         data_water = load_data(os.path.join(REFERENCE_FOLDER, "water_json_data_20250818.json"))
 
-        saver.save(data_electricity, data_water)
+        prices = {
+            "electricity_consumption_high_tariff": (16.76 + 15.31 + 0.59 + 0.25 + 2.49 + 0.6 + 0.022 + 0.76 + 0.7 + 0.6) * 1.081 / 100.0,
+            "electricity_consumption_low_tariff": (14.32 + 9.31 + 0.59 + 0.25 + 2.49 + 0.6 + 0.022 + 0.76 + 0.7 + 0.6) * 1.081 / 100.0,
+            "electricity_returned_to_grid_tariff": (12.20 + 1.50) / 100.0,
+            "water_consumption_tariff": (2.95 + 2.30) * 1.081,
+        }
+
+        saver.save(data_electricity, data_water, prices)
 
         saver.save_sums()
 

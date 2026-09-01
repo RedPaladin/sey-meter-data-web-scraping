@@ -30,6 +30,8 @@ ENV PYTHONPATH=/app
 # Copy the module directory and schedule it to be run daily
 COPY sey_meter_data_web_scraping /app/sey_meter_data_web_scraping
 COPY crontab.conf /etc/crontabs/root
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
 
 # Ensure package is available in site-packages so python3 -m can import it
 RUN python3 - <<'PY'
@@ -40,5 +42,5 @@ if os.path.exists(src) and not os.path.exists(dst):
     shutil.copytree(src, dst)
 PY
 
-# Run cron daemon in foreground
-CMD python3 -m sey_meter_data_web_scraping || crond -f
+# Price sensors are fetched from Home Assistant by the Python process itself; run once and fall back to cron daemon
+CMD ["/run.sh"]
